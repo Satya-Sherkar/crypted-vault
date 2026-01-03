@@ -1,6 +1,9 @@
+"use client"
+
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import Header from "@/components/header";
+import Providers from "./web3Providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,12 +18,14 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en">
-        <body>
-          <Header />
-          {children}
-        </body>
-      </html>
+      <Providers>
+        <html lang="en">
+          <body>
+            <Header />
+            {children}
+          </body>
+        </html>
+      </Providers>
     </ClerkProvider>
   );
 }
