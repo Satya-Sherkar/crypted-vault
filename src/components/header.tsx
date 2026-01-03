@@ -1,4 +1,7 @@
+"use client";
+
 import { SignInButton, SignUpButton, UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -44,6 +47,7 @@ export default function Header() {
                                     }
                                 }}
                             />
+                            <ConnectButton />
                         </SignedIn>
                     </div>
                 </div>
