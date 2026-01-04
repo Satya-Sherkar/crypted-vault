@@ -29,14 +29,18 @@ export default function Header() {
                     <div className="flex items-center gap-4">
                         <SignedOut>
                             <SignInButton mode="modal">
-                                <button className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
-                                    Sign In
-                                </button>
+                                <Link href="/sign-in"   >
+                                    <button className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+                                        Sign In
+                                    </button>
+                                </Link>
                             </SignInButton>
                             <SignUpButton mode="modal">
-                                <button className="px-6 py-2 text-sm font-medium text-white bg-linear-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg">
-                                    Sign Up
-                                </button>
+                                <Link href="/sign-up">
+                                    <button className="px-6 py-2 text-sm font-medium text-white bg-linear-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg">
+                                        Sign Up
+                                    </button>
+                                </Link>
                             </SignUpButton>
                         </SignedOut>
                         <SignedIn>
