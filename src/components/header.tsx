@@ -1,6 +1,6 @@
 "use client";
 
-import { SignInButton, SignUpButton, UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
+import { UserButton, SignedIn, SignedOut } from "@clerk/nextjs";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Image from "next/image";
 import Link from "next/link";
@@ -28,20 +28,16 @@ export default function Header() {
                     {/* Auth Buttons Section */}
                     <div className="flex items-center gap-4">
                         <SignedOut>
-                            <SignInButton mode="modal">
-                                <Link href="/sign-in"   >
-                                    <button className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
-                                        Sign In
-                                    </button>
-                                </Link>
-                            </SignInButton>
-                            <SignUpButton mode="modal">
-                                <Link href="/sign-up">
-                                    <button className="px-6 py-2 text-sm font-medium text-white bg-linear-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg">
-                                        Sign Up
-                                    </button>
-                                </Link>
-                            </SignUpButton>
+                            <Link href="/sign-in">
+                                <button className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+                                    Sign In
+                                </button>
+                            </Link>
+                            <Link href="/sign-up">
+                                <button className="px-6 py-2 text-sm font-medium text-white bg-linear-to-r from-blue-600 to-purple-600 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg">
+                                    Sign Up
+                                </button>
+                            </Link>
                         </SignedOut>
                         <SignedIn>
                             <UserButton
