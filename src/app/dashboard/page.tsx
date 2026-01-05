@@ -7,6 +7,7 @@ export default function Dashboard() {
     const { user } = useUser();
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [isDragging, setIsDragging] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,6 +37,39 @@ export default function Dashboard() {
 
     const handleUploadClick = () => {
         fileInputRef.current?.click();
+    };
+
+    const handleUploadToIpfs = async () => {
+        if (selectedFiles.length === 0) return;
+
+        setUploading(true);
+        try {
+            for (const file of selectedFiles) {
+                const formData = new FormData();
+                formData.append("file", file);
+
+                const res = await fetch("/api/upload", {
+                    method: "POST",
+                    body: formData,
+                });
+
+                if (!res.ok) {
+                    const error = await res.json();
+                    throw new Error(error.error || "Upload failed");
+                }
+
+                const data = await res.json();
+                console.log("Uploaded CID:", data.IpfsHash);
+                // Ideally add to a list of uploaded files here to display
+            }
+            alert("Upload successful!");
+            setSelectedFiles([]);
+        } catch (error) {
+            console.error(error);
+            alert("Upload failed. Check console for details.");
+        } finally {
+            setUploading(false);
+        }
     };
 
     return (
@@ -116,8 +150,22 @@ export default function Dashboard() {
                                             </p>
                                         ))}
                                     </div>
-                                    <button className="mt-4 px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors shadow-md">
-                                        Upload to IPFS
+                                    <button
+                                        onClick={handleUploadToIpfs}
+                                        disabled={uploading}
+                                        className="mt-4 px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
+                                    >
+                                        {uploading ? (
+                                            <>
+                                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Uploading...
+                                            </>
+                                        ) : (
+                                            "Upload to IPFS"
+                                        )}
                                     </button>
                                 </div>
                             )}
