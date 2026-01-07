@@ -18,6 +18,15 @@ const UserSchema = new Schema(
         lastName: {
             type: String,
         },
+        files: [
+            {
+                cid: { type: String, required: true },
+                iv: { type: String, required: true },
+                mimeType: { type: String, required: true },
+                originalName: { type: String, required: true },
+                createdAt: { type: Date, default: Date.now },
+            },
+        ],
     },
     { timestamps: true }
 );
