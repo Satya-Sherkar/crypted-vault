@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
         // Prepare for Pinata upload
         const uploadData = new FormData();
         // Create a Blob from the encrypted data
-        const blob = new Blob([encryptedData]);
+        const blob = new Blob([new Uint8Array(encryptedData)]);
         uploadData.append("file", blob, file.name);
 
         const check = await fetch("https://api.pinata.cloud/data/testAuthentication", {
