@@ -66,3 +66,49 @@ export async function GET(
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
+
+export async function DELETE(
+    request: NextRequest,
+    { params }: { params: Promise<{ cid: string }> }
+) {
+    try {
+        const { userId } = await auth();
+        if (!userId) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const { cid } = await params;
+
+        await dbConnect();
+
+        // Find user and remove the file from their array
+        const user = await User.findOneAndUpdate(
+            { clerkId: userId },
+            { $pull: { files: { cid: cid } } },
+            { new: true }
+        );
+
+        if (!user) {
+            return NextResponse.json({ error: "User not found" }, { status: 404 });
+        }
+
+        // Optionally unpin from Pinata (Fire and forget, or await)
+        // We'll try to unpin but not fail the request if it fails, as DB removal is critical one
+        try {
+            await fetch(`https://api.pinata.cloud/pinning/unpin/${cid}`, {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${process.env.PINATA_JWT}`,
+                },
+            });
+        } catch (pinError) {
+            console.error("Failed to unpin from Pinata:", pinError);
+        }
+
+        return NextResponse.json({ success: true, message: "File deleted successfully" });
+
+    } catch (error) {
+        console.error("Error deleting image:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+}
