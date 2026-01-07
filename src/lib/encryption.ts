@@ -1,8 +1,6 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
 
-// Use a secure key from environment variables or generate a fallback (WARN: Fallback is reset on restart)
-// In production, ENCRYPTION_KEY must be set and consistent.
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default_key_must_be_32_bytes_long!';
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY!;
 const ALGORITHM = 'aes-256-cbc';
 
 // Ensure key is 32 bytes
