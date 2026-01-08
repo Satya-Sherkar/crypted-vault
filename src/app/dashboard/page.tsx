@@ -86,7 +86,17 @@ export default function Dashboard() {
     const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (files) {
-            setSelectedFiles(Array.from(files));
+            const newFiles = Array.from(files);
+            setSelectedFiles((prev) => {
+                const combined = [...prev, ...newFiles];
+                if (combined.length > 5) {
+                    alert("You can only upload up to 5 files at a time.");
+                    return combined.slice(0, 5);
+                }
+                return combined;
+            });
+            // Reset input value to allow selecting the same file again if needed (though we just accumulated it)
+            event.target.value = "";
         }
     };
 
@@ -104,7 +114,15 @@ export default function Dashboard() {
         setIsDragging(false);
         const files = event.dataTransfer.files;
         if (files) {
-            setSelectedFiles(Array.from(files));
+            const newFiles = Array.from(files);
+            setSelectedFiles((prev) => {
+                const combined = [...prev, ...newFiles];
+                if (combined.length > 5) {
+                    alert("You can only upload up to 5 files at a time.");
+                    return combined.slice(0, 5);
+                }
+                return combined;
+            });
         }
     };
 
@@ -117,7 +135,7 @@ export default function Dashboard() {
 
         setUploading(true);
         try {
-            for (const file of selectedFiles) {
+            const uploadPromises = selectedFiles.map(async (file) => {
                 const formData = new FormData();
                 formData.append("file", file);
 
@@ -128,18 +146,20 @@ export default function Dashboard() {
 
                 if (!res.ok) {
                     const error = await res.json();
-                    throw new Error(error.error || "Upload failed");
+                    throw new Error(error.error || `Upload failed for ${file.name}`);
                 }
 
-                const data = await res.json();
-                console.log("Uploaded CID:", data.IpfsHash);
-            }
-            alert("Upload successful!");
+                return res.json();
+            });
+
+            await Promise.all(uploadPromises);
+
+            alert("All files uploaded successfully!");
             setSelectedFiles([]);
             fetchImages(); // Refresh the list
         } catch (error) {
             console.error(error);
-            alert("Upload failed. Check console for details.");
+            alert("Some uploads failed. Check console for details.");
         } finally {
             setUploading(false);
         }
@@ -212,34 +232,85 @@ export default function Dashboard() {
                             </button>
 
                             {selectedFiles.length > 0 && (
-                                <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                                    <p className="text-green-700 font-medium">
-                                        ✓ {selectedFiles.length} file{selectedFiles.length > 1 ? "s" : ""} selected
-                                    </p>
-                                    <div className="mt-2 space-y-1">
-                                        {selectedFiles.map((file, index) => (
-                                            <p key={index} className="text-sm text-green-600">
-                                                {file.name}
-                                            </p>
-                                        ))}
+                                <div className="mt-8">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-gray-700 font-semibold">
+                                            Selected Files ({selectedFiles.length})
+                                        </h3>
+                                        <button
+                                            onClick={() => setSelectedFiles([])}
+                                            className="text-red-500 hover:text-red-700 text-sm font-medium"
+                                        >
+                                            Clear all
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={handleUploadToIpfs}
-                                        disabled={uploading}
-                                        className="mt-4 px-6 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-2"
-                                    >
-                                        {uploading ? (
-                                            <>
-                                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                Uploading...
-                                            </>
-                                        ) : (
-                                            "Upload to IPFS"
-                                        )}
-                                    </button>
+
+                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                                        {selectedFiles.map((file, index) => {
+                                            const previewUrl = URL.createObjectURL(file);
+                                            // Note: In a real app with many files, we should manage these URLs with useEffect to revoke them
+                                            // avoiding memory leaks. For simplicity in this render loop we might leak if re-renders happen often without cleanup.
+                                            // Let's refactor to a safer component approach or cleanup in useEffect.
+                                            // Actually, to do it right, let's just stick to the plan:
+                                            return (
+                                                <div key={index} className="relative group aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                                                    <img
+                                                        src={previewUrl}
+                                                        alt={file.name}
+                                                        className="w-full h-full object-cover"
+                                                        onLoad={() => URL.revokeObjectURL(previewUrl)} // Revoke after load to save memory, simple trick
+                                                    />
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+                                                            }}
+                                                            className="p-2 bg-red-500 rounded-full text-white hover:bg-red-600 transition-transform hover:scale-110"
+                                                            title="Remove file"
+                                                        >
+                                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-2">
+                                                        <p className="text-white text-xs truncate">
+                                                            {file.name}
+                                                        </p>
+                                                        <p className="text-gray-300 text-[10px]">
+                                                            {(file.size / 1024 / 1024).toFixed(2)} MB
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <div className="flex justify-end">
+                                        <button
+                                            onClick={handleUploadToIpfs}
+                                            disabled={uploading}
+                                            className="px-6 py-3 bg-linear-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all"
+                                        >
+                                            {uploading ? (
+                                                <>
+                                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    Uploading {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''}...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                    </svg>
+                                                    Upload {selectedFiles.length} File{selectedFiles.length !== 1 ? 's' : ''} to IPFS
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>
